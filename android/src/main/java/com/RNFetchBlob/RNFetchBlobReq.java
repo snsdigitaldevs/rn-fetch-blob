@@ -591,7 +591,24 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
 //                    ignored.printStackTrace();
                 }
 
-                RNFetchBlobFileResp rnFetchBlobFileResp = (RNFetchBlobFileResp) responseBody;
+                RNFetchBlobFileResp rnFetchBlobFileResp;
+                try {
+                    rnFetchBlobFileResp = (RNFetchBlobFileResp) responseBody;
+                } catch (ClassCastException ex) {
+                    // unexpected response type
+                    if (responseBody != null) {
+                        String responseBodyString = "";
+                        try {
+                            responseBodyString = responseBody.string();
+                        } catch(IOException exception) {
+                            exception.printStackTrace();
+                        }
+                        callback.invoke("Unexpected FileStorage response file: " + responseBodyString, null);
+                    } else {
+                        callback.invoke("Unexpected FileStorage response with no file.", null);
+                    }
+                    return;
+                }
 
                 if(rnFetchBlobFileResp != null && !rnFetchBlobFileResp.isDownloadComplete()){
                     callback.invoke("Download interrupted.", null);
