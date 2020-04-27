@@ -603,7 +603,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                         } catch(IOException exception) {
                             exception.printStackTrace();
                         }
-                        callback.invoke("Unexpected FileStorage response file: " + responseBodyString, null);
+                        callback.invoke("Unexpected FileStorage response file.", null);
                     } else {
                         callback.invoke("Unexpected FileStorage response with no file.", null);
                     }
