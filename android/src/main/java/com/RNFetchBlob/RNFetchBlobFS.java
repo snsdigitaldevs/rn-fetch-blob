@@ -252,17 +252,29 @@ class RNFetchBlobFS {
 
         res.put("DocumentDir", ctx.getFilesDir().getAbsolutePath());
         res.put("CacheDir", ctx.getCacheDir().getAbsolutePath());
-        res.put("DCIMDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath());
-        res.put("PictureDir", ctx.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath());
-        res.put("MusicDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath());
-        res.put("DownloadDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
-        res.put("MovieDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES).getAbsolutePath());
-        res.put("RingtoneDir", ctx.getExternalFilesDir(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            res.put("DCIMDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath());
+            res.put("PictureDir", ctx.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath());
+            res.put("MusicDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath());
+            res.put("DownloadDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
+            res.put("MovieDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES).getAbsolutePath());
+            res.put("RingtoneDir", ctx.getExternalFilesDir(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
+        } else {
+            res.put("DCIMDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath());
+            res.put("PictureDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath());
+            res.put("MusicDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath());
+            res.put("DownloadDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
+            res.put("MovieDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getAbsolutePath());
+            res.put("RingtoneDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
+        }
         String state;
         state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
-            res.put("SDCardDir", ctx.getExternalFilesDir(null).getAbsolutePath());
-
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                res.put("SDCardDir", ctx.getExternalFilesDir(null).getAbsolutePath());
+            } else {
+                res.put("SDCardDir", Environment.getExternalStorageDirectory().getAbsolutePath());
+            }
             File externalDirectory = ctx.getExternalFilesDir(null);
 
             if (externalDirectory != null) {
@@ -278,7 +290,11 @@ class RNFetchBlobFS {
 
     static public void getSDCardDir(ReactApplicationContext ctx, Promise promise) {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            promise.resolve(ctx.getExternalFilesDir(null).getAbsolutePath());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                promise.resolve(ctx.getExternalFilesDir(null).getAbsolutePath());
+            } else {
+                promise.resolve(Environment.getExternalStorageDirectory().getAbsolutePath());
+            }
         } else {
             promise.reject("RNFetchBlob.getSDCardDir", "External storage not mounted");
         }
@@ -987,12 +1003,22 @@ class RNFetchBlobFS {
     }
 
     static void df(Callback callback, ReactApplicationContext ctx) {
-        StatFs stat = new StatFs(ctx.getFilesDir().getPath());
+        StatFs stat;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            stat = new StatFs(ctx.getFilesDir().getPath());
+        } else {
+            stat = new StatFs(Environment.getDataDirectory().getPath());
+        }
         WritableMap args = Arguments.createMap();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             args.putString("internal_free", String.valueOf(stat.getFreeBytes()));
             args.putString("internal_total", String.valueOf(stat.getTotalBytes()));
-            StatFs statEx = new StatFs(ctx.getExternalFilesDir(null).getPath());
+            StatFs statEx;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                statEx = new StatFs(ctx.getExternalFilesDir(null).getPath());
+            } else {
+                statEx = new StatFs(Environment.getExternalStorageDirectory().getPath());
+            }
             args.putString("external_free", String.valueOf(statEx.getFreeBytes()));
             args.putString("external_total", String.valueOf(statEx.getTotalBytes()));
 

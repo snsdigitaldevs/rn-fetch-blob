@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.content.ContentUris;
@@ -29,7 +30,10 @@ public class PathResolver {
                 final String type = split[0];
 
                 if ("primary".equalsIgnoreCase(type)) {
-                    return context.getExternalFilesDir(null) + "/" + split[1];
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        return context.getExternalFilesDir(null) + "/" + split[1];
+                    }
+                    return Environment.getExternalStorageDirectory() + "/" + split[1];
                 }
 
                 // TODO handle non-primary volumes
