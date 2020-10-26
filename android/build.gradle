@@ -44,5 +44,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:+'
     implementation 'com.squareup.okhttp3:logging-interceptor:+'
     implementation 'com.squareup.okhttp3:okhttp-urlconnection:+'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.6'
 //    {RNFetchBlob_PRE_0.28_DEPDENDENCY}
 }

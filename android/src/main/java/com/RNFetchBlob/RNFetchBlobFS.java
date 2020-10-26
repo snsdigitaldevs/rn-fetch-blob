@@ -20,6 +20,8 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import org.apache.commons.io.FileUtils;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -249,6 +251,18 @@ class RNFetchBlobFS {
      */
     static Map<String, Object> getSystemfolders(ReactApplicationContext ctx) {
         Map<String, Object> res = new HashMap<>();
+
+        String source = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + "/Pimsleur";
+        String destination = ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath() + "/Pimsleur";
+
+        File srcDir = new File(source);
+        File destDir = new File(destination);
+
+        try {
+            FileUtils.moveDirectoryToDirectory(srcDir, destDir, true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         res.put("DocumentDir", ctx.getFilesDir().getAbsolutePath());
         res.put("CacheDir", ctx.getCacheDir().getAbsolutePath());
