@@ -389,9 +389,15 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     }
 
     if (respFile) {
-        [writeStream close];
+      @try {
+        if (writeStream) {
+          [writeStream close];
+        }
         rnfbRespType = RESP_TYPE_PATH;
         respStr = destPath;
+      } @catch (NSException *exception) {
+        NSLog(@"exception happens: %@", exception);
+      }
     } else { // base64 response
         // #73 fix unicode data encoding issue :
         // when response type is BASE64, we should first try to encode the response data to UTF8 format
