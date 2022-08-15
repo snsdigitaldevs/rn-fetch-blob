@@ -48,16 +48,21 @@ static void initialize_tables() {
 - (id)init {
     self = [super init];
     if (self) {
-        self.requestsTable = [NSMapTable mapTableWithKeyOptions:NSMapTableStrongMemory valueOptions:NSMapTableWeakMemory];
+//        self.requestsTable = [NSMapTable mapTableWithKeyOptions:NSMapTableStrongMemory valueOptions:NSMapTableWeakMemory];
         
         self.taskQueue = [[NSOperationQueue alloc] init];
         self.taskQueue.qualityOfService = NSQualityOfServiceUtility;
         self.taskQueue.maxConcurrentOperationCount = 10;
         self.rebindProgressDict = [NSMutableDictionary dictionary];
         self.rebindUploadProgressDict = [NSMutableDictionary dictionary];
+        self.requestDict = [NSMutableDictionary dictionary];
     }
     
     return self;
+}
+
+- (void)dealloc {
+    [self.requestDict removeAllObjects];
 }
 
 + (RNFetchBlobNetwork* _Nullable)sharedInstance {
@@ -88,7 +93,7 @@ static void initialize_tables() {
                 callback:callback];
     
     @synchronized([RNFetchBlobNetwork class]) {
-        [self.requestsTable setObject:request forKey:taskId];
+        [self.requestDict setObject:request forKey:taskId];
         [self checkProgressConfig];
     }
 }
@@ -111,10 +116,10 @@ static void initialize_tables() {
 {
     if (config) {
         @synchronized ([RNFetchBlobNetwork class]) {
-            if (![self.requestsTable objectForKey:taskId]) {
+            if (![self.requestDict objectForKey:taskId]) {
                 [self.rebindProgressDict setValue:config forKey:taskId];
             } else {
-                [self.requestsTable objectForKey:taskId].progressConfig = config;
+                [self.requestDict objectForKey:taskId].progressConfig = config;
             }
         }
     }
@@ -124,10 +129,10 @@ static void initialize_tables() {
 {
     if (config) {
         @synchronized ([RNFetchBlobNetwork class]) {
-            if (![self.requestsTable objectForKey:taskId]) {
+            if (![self.requestDict objectForKey:taskId]) {
                 [self.rebindUploadProgressDict setValue:config forKey:taskId];
             } else {
-                [self.requestsTable objectForKey:taskId].uploadProgressConfig = config;
+                [self.requestDict objectForKey:taskId].uploadProgressConfig = config;
             }
         }
     }
@@ -138,11 +143,12 @@ static void initialize_tables() {
     NSURLSessionDataTask * task;
     
     @synchronized ([RNFetchBlobNetwork class]) {
-        task = [self.requestsTable objectForKey:taskId].task;
+        task = [self.requestDict objectForKey:taskId].task;
     }
     
     if (task && task.state == NSURLSessionTaskStateRunning) {
         [task cancel];
+        [self.requestDict removeObjectForKey:taskId];
     }
 }
 
