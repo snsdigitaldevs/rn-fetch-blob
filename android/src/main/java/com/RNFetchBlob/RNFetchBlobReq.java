@@ -196,7 +196,11 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                 DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
                 downloadManagerId = dm.enqueue(req);
                 androidDownloadManagerTaskTable.put(taskId, Long.valueOf(downloadManagerId));
-                appCtx.registerReceiver(this, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                if (Build.VERSION.SDK_INT >= 34 && appCtx.getApplicationInfo().targetSdkVersion >= 34) {
+                  appCtx.registerReceiver(this, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE), Context.RECEIVER_NOT_EXPORTED);
+                } else {
+                  appCtx.registerReceiver(this, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+                }
                 return;
             }
 
@@ -566,7 +570,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                         // This usually mean the data is contains invalid unicode characters but still valid data,
                         // it's binary data, so send it as a normal string
                         catch(CharacterCodingException ignored) {
-                            
+
                             if(responseFormat == ResponseFormat.UTF8) {
                                 String utf8 = new String(b);
                                 callback.invoke(null, RNFetchBlobConst.RNFB_RESPONSE_UTF8, utf8);
