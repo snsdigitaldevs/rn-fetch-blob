@@ -250,15 +250,15 @@ class RNFetchBlobFS {
     static Map<String, Object> getSystemfolders(ReactApplicationContext ctx) {
         Map<String, Object> res = new HashMap<>();
 
-        res.put("DocumentDir", ctx.getFilesDir().getAbsolutePath());
-        res.put("CacheDir", ctx.getCacheDir().getAbsolutePath());
+        res.put("DocumentDir", ctx.getFilesDir() == null ? "" : ctx.getFilesDir().getAbsolutePath());
+        res.put("CacheDir", ctx.getCacheDir() == null ? "" : ctx.getCacheDir().getAbsolutePath());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            res.put("DCIMDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath());
-            res.put("PictureDir", ctx.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath());
-            res.put("MusicDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath());
-            res.put("DownloadDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
-            res.put("MovieDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES).getAbsolutePath());
-            res.put("RingtoneDir", ctx.getExternalFilesDir(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
+            res.put("DCIMDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_DCIM));
+            res.put("PictureDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_PICTURES));
+            res.put("MusicDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_MUSIC));
+            res.put("DownloadDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_DOWNLOADS));
+            res.put("MovieDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_MOVIES));
+            res.put("RingtoneDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_RINGTONES));
         } else {
             res.put("DCIMDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath());
             res.put("PictureDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath());
@@ -271,14 +271,14 @@ class RNFetchBlobFS {
         state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                res.put("SDCardDir", ctx.getExternalFilesDir(null).getAbsolutePath());
+                res.put("SDCardDir", getExternalFilesDirPath(ctx, null));
             } else {
                 res.put("SDCardDir", Environment.getExternalStorageDirectory().getAbsolutePath());
             }
             File externalDirectory = ctx.getExternalFilesDir(null);
 
-            if (externalDirectory != null) {
-                res.put("SDCardApplicationDir", externalDirectory.getParentFile().getAbsolutePath());
+            if (externalDirectory != null && externalDirectory.getParentFile() != null) {
+              res.put("SDCardApplicationDir", externalDirectory.getParentFile().getAbsolutePath());
             } else {
               res.put("SDCardApplicationDir", "");
             }
@@ -286,6 +286,12 @@ class RNFetchBlobFS {
         res.put("MainBundleDir", ctx.getApplicationInfo().dataDir);
 
         return res;
+    }
+
+    static String getExternalFilesDirPath(ReactApplicationContext ctx, String type) {
+      File dir = ctx.getExternalFilesDir(type);
+      if (dir != null) return dir.getAbsolutePath();
+      return "";
     }
 
     static public void getSDCardDir(ReactApplicationContext ctx, Promise promise) {
@@ -696,7 +702,7 @@ class RNFetchBlobFS {
     /**
      * List content of folder
      * @param path Target folder
-     * @param callback  JS context callback
+     * @param promise  JS context callback
      */
     static void ls(String path, Promise promise) {
         try {
