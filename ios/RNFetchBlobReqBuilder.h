@@ -19,7 +19,7 @@
                           url:(NSString *)url
                       headers:(NSDictionary *)headers
                          form:(NSArray *)form
-                   onComplete:(void(^)(NSURLRequest * req, long bodyLength))onComplete;
+                   onComplete:(void(^)(NSURLRequest * req, long bodyLength, NSString * err))onComplete;
 
 +(void) buildOctetRequest:(NSDictionary *)options
                    taskId:(NSString *)taskId

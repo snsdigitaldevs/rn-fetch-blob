@@ -95,12 +95,12 @@ RCT_EXPORT_METHOD(fetchBlobForm:(NSDictionary *)options
                                              url:url
                                          headers:headers
                                             form:form
-                                      onComplete:^(__weak NSURLRequest *req, long bodyLength)
+                                      onComplete:^(__weak NSURLRequest *req, long bodyLength, NSString * err)
     {
         // something went wrong when building the request body
-        if(req == nil)
+        if(req == nil || err != nil)
         {
-            callback(@[@"RNFetchBlob.fetchBlobForm failed to create request body"]);
+          callback(@[[NSString stringWithFormat:@"RNFetchBlob.fetchBlobForm failed to create request body, err = %@", err]]);
         }
         // send HTTP request
         else
@@ -496,7 +496,7 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    
+
     [RNFetchBlobFS readFile:path encoding:encoding onComplete:^(NSData * content, NSString * code, NSString * err) {
         if(err != nil) {
             reject(code, err, nil);

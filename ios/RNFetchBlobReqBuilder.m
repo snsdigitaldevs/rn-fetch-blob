@@ -35,7 +35,7 @@
                           url:(NSString *)url
                       headers:(NSDictionary *)headers
                          form:(NSArray *)form
-                   onComplete:(void(^)(NSURLRequest * req, long bodyLength))onComplete
+                   onComplete:(void(^)(NSURLRequest * req, long bodyLength, NSString *err))onComplete
 {
     //    NSString * encodedUrl = [url stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSString * encodedUrl = url;
@@ -51,10 +51,10 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         __block NSMutableData * postData = [[NSMutableData alloc] init];
         // combine multipart/form-data body
-        [[self class] buildFormBody:form boundary:boundary onComplete:^(NSData *formData, BOOL hasError) {
-            if(hasError)
+      [[self class] buildFormBody:form boundary:boundary onComplete:^(NSData *formData, NSString *err) {
+            if(err != nil)
             {
-                onComplete(nil, nil);
+                onComplete(nil, nil, err);
             }
             else
             {
@@ -72,7 +72,7 @@
                 [mheaders setValue:[NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary] forKey:@"content-type"];
                 [request setHTTPMethod: method];
                 [request setAllHTTPHeaderFields:mheaders];
-                onComplete(request, [formData length]);
+                onComplete(request, [formData length], nil);
             }
         }];
 
@@ -117,7 +117,7 @@
                     orgPath = [RNFetchBlobFS getPathOfAsset:orgPath];
                     if([orgPath hasPrefix:AL_PREFIX])
                     {
-                        
+
                         [RNFetchBlobFS readFile:orgPath encoding:nil onComplete:^(id content, NSString* code, NSString * err) {
                             if(err != nil)
                             {
@@ -131,7 +131,7 @@
                                 onComplete(request, [((NSData *)content) length]);
                             }
                         }];
-                        
+
                         return;
                     }
                     size = [[[NSFileManager defaultManager] attributesOfItemAtPath:orgPath error:nil] fileSize];
@@ -178,11 +178,11 @@
     });
 }
 
-+(void) buildFormBody:(NSArray *)form boundary:(NSString *)boundary onComplete:(void(^)(NSData * formData, BOOL hasError))onComplete
++(void) buildFormBody:(NSArray *)form boundary:(NSString *)boundary onComplete:(void(^)(NSData * formData, NSString *err))onComplete
 {
     __block NSMutableData * formData = [[NSMutableData alloc] init];
     if(form == nil)
-        onComplete(nil, NO);
+        onComplete(nil, nil);
     else
     {
         __block int i = 0;
@@ -225,7 +225,7 @@
                         [RNFetchBlobFS readFile:orgPath encoding:nil onComplete:^(NSData *content, NSString* code, NSString * err) {
                             if(err != nil)
                             {
-                                onComplete(formData, YES);
+                                onComplete(formData, err);
                                 return;
                             }
                             NSString * filename = [field valueForKey:@"filename"];
@@ -242,7 +242,7 @@
                             }
                             else
                             {
-                                onComplete(formData, NO);
+                                onComplete(formData, nil);
                                 getFieldData = nil;
                             }
                         }];
@@ -267,7 +267,7 @@
             }
             else
             {
-                onComplete(formData, NO);
+                onComplete(formData, nil);
                 getFieldData = nil;
             }
 
