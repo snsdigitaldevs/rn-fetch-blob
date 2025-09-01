@@ -49,7 +49,7 @@ static void initialize_tables() {
     self = [super init];
     if (self) {
 //        self.requestsTable = [NSMapTable mapTableWithKeyOptions:NSMapTableStrongMemory valueOptions:NSMapTableWeakMemory];
-        
+
         self.taskQueue = [[NSOperationQueue alloc] init];
         self.taskQueue.qualityOfService = NSQualityOfServiceUtility;
         self.taskQueue.maxConcurrentOperationCount = 10;
@@ -57,7 +57,7 @@ static void initialize_tables() {
         self.rebindUploadProgressDict = [NSMutableDictionary dictionary];
         self.requestDict = [NSMutableDictionary dictionary];
     }
-    
+
     return self;
 }
 
@@ -72,7 +72,7 @@ static void initialize_tables() {
     dispatch_once(&onceToken, ^{
         _sharedInstance = [[self alloc] init];
     });
-    
+
     return _sharedInstance;
 }
 
@@ -91,25 +91,28 @@ static void initialize_tables() {
              withRequest:req
       taskOperationQueue:self.taskQueue
                 callback:callback];
-    
+
     @synchronized([RNFetchBlobNetwork class]) {
         [self.requestDict setObject:request forKey:taskId];
-        [self checkProgressConfig];
+        [self checkProgressConfigForTask:taskId];
     }
 }
 
-- (void) checkProgressConfig {
+// see https://github.com/joltup/rn-fetch-blob/pull/558
+- (void) checkProgressConfigForTask:(NSString *)taskId {
     //reconfig progress
-    [self.rebindProgressDict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, RNFetchBlobProgress * _Nonnull config, BOOL * _Nonnull stop) {
-        [self enableProgressReport:key config:config];
-    }];
-    [self.rebindProgressDict removeAllObjects];
-    
+    RNFetchBlobProgress *downloadConfig = self.rebindProgressDict[taskId];
+    if (downloadConfig != nil) {
+        [self enableProgressReport:taskId config:downloadConfig];
+        [self.rebindProgressDict removeObjectForKey:taskId];
+    }
+
     //reconfig uploadProgress
-    [self.rebindUploadProgressDict enumerateKeysAndObjectsUsingBlock:^(NSString * _Nonnull key, RNFetchBlobProgress * _Nonnull config, BOOL * _Nonnull stop) {
-        [self enableUploadProgress:key config:config];
-    }];
-    [self.rebindUploadProgressDict removeAllObjects];
+    RNFetchBlobProgress *uploadConfig = self.rebindUploadProgressDict[taskId];
+    if (uploadConfig != nil) {
+        [self enableUploadProgress:taskId config:uploadConfig];
+        [self.rebindUploadProgressDict removeObjectForKey:taskId];
+    }
 }
 
 - (void) enableProgressReport:(NSString *) taskId config:(RNFetchBlobProgress *)config
@@ -141,11 +144,11 @@ static void initialize_tables() {
 - (void) cancelRequest:(NSString *)taskId
 {
     NSURLSessionDataTask * task;
-    
+
     @synchronized ([RNFetchBlobNetwork class]) {
         task = [self.requestDict objectForKey:taskId].task;
     }
-    
+
     if (task && task.state == NSURLSessionTaskStateRunning) {
         [task cancel];
         [self.requestDict removeObjectForKey:taskId];
@@ -159,7 +162,7 @@ static void initialize_tables() {
     for (NSString * key in headers) {
         [mheaders setValue:[headers valueForKey:key] forKey:[key lowercaseString]];
     }
-    
+
     return mheaders;
 }
 
@@ -169,15 +172,15 @@ static void initialize_tables() {
     @synchronized ([RNFetchBlobNetwork class]){
         NSEnumerator * emu =  [expirationTable keyEnumerator];
         NSString * key;
-        
+
         while ((key = [emu nextObject]))
         {
             RCTBridge * bridge = [RNFetchBlob getRCTBridge];
             id args = @{ @"taskId": key };
             [bridge.eventDispatcher sendDeviceEventWithName:EVENT_EXPIRE body:args];
-            
+
         }
-        
+
         // clear expired task entries
         [expirationTable removeAllObjects];
         expirationTable = [[NSMapTable alloc] init];
